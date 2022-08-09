@@ -1,0 +1,138 @@
+syntax = "proto2";
+package etheriasaves;
+
+message EtheriaCulture
+{
+	required int32 amount_of_histfigs = 1;
+	required int32 amount_of_histevents = 2;
+	repeated SavedHistoryFigure figures = 16;
+	repeated SavedHistoryEvent events = 17;
+}
+message EtheriaRNG
+{
+	required sfixed32 world_seed = 1;
+}
+message EtheriaWorld
+{
+	message DungeonLocation
+	{
+		required sfixed32 longitude = 1;
+		required sfixed32 latitude = 2;
+		required fixed32 type = 3;
+	}
+	repeated DungeonLocation locations = 1;
+}
+
+message EtheriaSave
+{
+	required string save_name = 1;
+	required fixed32 save_version = 2;
+
+	message Meta
+	{
+		optional int32 context_reads = 1;
+		optional int32 context_writes = 2;
+		optional int32 times_saved = 3;
+		optional int32 times_loaded = 4;
+		optional int64 last_save = 5;
+		optional int64 last_load = 6;
+		optional bool modified = 7;
+		optional bool modified_content = 8;
+		optional int64 last_context_read = 9;
+		optional int64 last_context_write = 10;
+	}
+
+	enum Mode
+	{
+		MODE_MAINMENU = 0;
+		MODE_PLANETVIEW = 1;
+		MODE_WORLDVIEW = 2;
+	}
+
+	required Mode last_mode = 3;
+
+	optional Meta meta = 4;
+
+	optional EtheriaCulture culture = 16;
+	optional EtheriaWorld world = 17;
+	optional EtheriaRNG rng = 18;
+
+	optional string last_system_message = 19;
+}
+
+message Color
+{
+	required fixed32 r = 1;
+	required fixed32 g = 2;
+	required fixed32 b = 3;
+	required fixed32 a = 4;
+}
+
+message Actor
+{
+	required string game_name = 1;
+	optional string ui_name = 16;
+	optional fixed32 histfig_id = 17;
+
+	required int32 groundlevel = 2;
+	required int32 level = 3;
+	required int32 hp = 4;
+	required int32 hpmax = 5;
+	required int32 ch = 6;
+	required int32 x = 7;
+	required int32 y = 8;
+	required int64 pstatus = 9;
+	required int64 astatus = 10;
+	
+	optional bool pcontrolmode = 18;
+	
+	required int64 abilities = 11;
+
+	required Color color = 12;
+
+	repeated bool itemlist = 13;
+}
+
+message HistoryFigureSoul
+{
+	required int32 age = 1;
+	optional int32 generation = 2;
+}
+
+message SavedHistoryFigure
+{
+	required string game_name = 1;
+	required string ui_name = 2;
+
+	required HistoryFigureSoul soul = 3;
+}
+
+message SavedHistoryEvent
+{
+	enum HET
+	{
+		SHET_NULL_ALL = -1;
+		SHET_NULL = 0;
+		SHET_CREATION = 1;
+		SHET_DEATH = 2;
+		SHET_BIRTH = 3;
+		SHET_BIRTHDAY = 4;
+		SHET_ARRIVAL = 5;
+		SHET_CHILDMAKING = 6;
+	}
+
+	required HET type = 1;
+
+	required bool histfig = 2;
+	optional int32 histfig_id = 16;
+
+	required int32 day = 4;
+	required int32 hour = 5;
+	required int32 year = 6;
+
+	required int32 latitude = 7;
+	required int32 longitude = 8;
+
+	optional int32 histfig_parenta = 17;
+	optional int32 histfig_parentb = 18;
+}
