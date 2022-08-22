@@ -2,6 +2,53 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <libguile.h>
+#include "scm.hpp"
+#ifdef WIZARD
+#include <google/protobuf/util/json_util.h>
+#endif
+
+SCM scm::save_set_modified(SCM pointer, SCM modified)
+{
+	ASSERT(pointer);
+	SaveFile* file = (SaveFile*)scm_to_pointer(pointer);
+	bool mod = scm_to_bool(modified);
+	etheriasaves::EtheriaSave::Meta* meta =
+		file->save.mutable_meta();
+	meta->set_modified(mod);
+	return scm_from_bool(mod);
+}
+
+SCM scm::save_set_modified_content(SCM pointer, SCM modified)
+{
+	ASSERT(pointer);
+	SaveFile* file = (SaveFile*)scm_to_pointer(pointer);
+	bool mod = scm_to_bool(modified);
+	etheriasaves::EtheriaSave::Meta* meta =
+		file->save.mutable_meta();
+	meta->set_modified_content(mod);
+	return scm_from_bool(mod);
+}
+
+SCM scm::save_force_load(SCM pointer, SCM planet)
+{	
+	ASSERT(pointer);
+	ASSERT(planet);
+	SaveFile* file = (SaveFile*)scm_to_pointer(pointer);
+	Planet* destination = (Planet*)scm_to_pointer(planet);
+	file->UpdateWorld(*destination);
+	return scm_from_bool(true);
+}
+
+SCM scm::save_force_save(SCM pointer, SCM planet)
+{
+	ASSERT(pointer);
+	ASSERT(planet);
+	SaveFile* file = (SaveFile*)scm_to_pointer(pointer);
+	Planet* source = (Planet*)scm_to_pointer(planet);
+	file->SaveWorld(*source);
+	return scm_from_bool(true);
+}
 
 SaveFile::SaveFile()
 {
@@ -53,6 +100,14 @@ void SaveFile::WriteFile(char* path)
 	{
 		etheria_log("saved to %s\n", path);
 	}
+#ifdef WIZARD
+	std::string json;
+	google::protobuf::util::JsonPrintOptions options;
+	options.add_whitespace = true;
+	options.preserve_proto_field_names = true;
+	google::protobuf::util::MessageToJsonString(save,&json,options);
+	etheria_log("json data:\n%s\n",json.c_str());
+#endif
 }
 
 void SaveFile::UpdateWorld(Planet& planet)
@@ -62,7 +117,10 @@ void SaveFile::UpdateWorld(Planet& planet)
 	meta->set_last_context_read(time(NULL));
 	if(save.has_culture())
 	{
-		
+		etheriasaves::EtheriaCulture culture = save.culture();
+		planet.playerCulture->current_year = culture.year();
+		planet.playerCulture->current_day  = culture.day();
+		planet.playerCulture->current_hour = culture.hour();
 	}
 	else
 	{
@@ -98,10 +156,16 @@ void SaveFile::UpdateWorld(Planet& planet)
 	if(save.has_last_system_message())
 		set_system_message(save.last_system_message().c_str());
 	currentMode = (GameMode)save.last_mode();
+	SCM lfunc = scm_variable_ref(
+		scm_c_lookup("save_load_context"));
+	scm_call_1(lfunc, scm_from_pointer(this, NULL));
 }
 
 void SaveFile::SaveWorld(Planet planet)
 {
+	SCM lfunc = scm_variable_ref(
+		scm_c_lookup("save_save_context"));
+	scm_call_1(lfunc, scm_from_pointer(this, NULL));
 	etheriasaves::EtheriaRNG* rng = save.mutable_rng();
 	etheriasaves::EtheriaWorld* world = save.mutable_world();
 	etheriasaves::EtheriaSave::Meta* meta = save.mutable_meta();
@@ -119,8 +183,9 @@ void SaveFile::SaveWorld(Planet planet)
 		slocation->set_latitude(location.latitude);
 		slocation->set_type(location.biome);
 	}
-	for(int i = 0; i < planet.playerCulture->amount_of_histfigs;
-	i++)
+	for(int i = 0;
+	    i < planet.playerCulture->amount_of_histfigs;
+	    i++)
 	{
 		HistoryFigure histfig =
 			planet.playerCulture->histfigs[i];
@@ -133,8 +198,9 @@ void SaveFile::SaveWorld(Planet planet)
 		soul->set_generation(histfig.soul.generation);
 	}
 	culture->set_amount_of_histfigs(planet.playerCulture->amount_of_histfigs);
-	for(int i = 0; i < planet.playerCulture->amount_of_histevents;
-	i++)
+	for(int i = 0;
+	    i < planet.playerCulture->amount_of_histevents;
+	    i++)
 	{
 		HistoryEvent histevent =
 			planet.playerCulture->historyevents.at(i);
@@ -153,6 +219,9 @@ void SaveFile::SaveWorld(Planet planet)
 		event->set_histfig_parentb(histevent.histfig_parentb);
 	}
 	culture->set_amount_of_histevents(planet.playerCulture->amount_of_histevents);
+	culture->set_year(planet.playerCulture->current_year);
+	culture->set_day(planet.playerCulture->current_day);
+	culture->set_hour(planet.playerCulture->current_hour);
 	save.set_last_mode((etheriasaves::EtheriaSave::Mode)currentMode);
 	save.set_last_system_message(get_system_message());
 }

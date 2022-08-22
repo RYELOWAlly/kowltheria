@@ -21,16 +21,6 @@
 #define ABILITY_XRAY         0b000010
 #define ABILITY_FARSIGHT     0b000100
 
-enum ItemType 
-{
-	ITEMTYPE_PERSCRIPTIONGLASSES,
-
-	ITEMTYPE_NULL_SIZE,
-};
-
-const char* get_name_for_type(ItemType t);
-char get_char_for_type(ItemType t);
-
 class FloorItem
 {
 public:

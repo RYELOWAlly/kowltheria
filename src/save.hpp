@@ -7,9 +7,6 @@
 
 struct SaveFile
 {
-private:
-	etheriasaves::EtheriaSave save;
-
 public:
 	SaveFile();
 
@@ -18,6 +15,8 @@ public:
 
 	void UpdateWorld(Planet& planet);
 	void SaveWorld(Planet planet);
+	
+	etheriasaves::EtheriaSave save;
 };
 
 #endif

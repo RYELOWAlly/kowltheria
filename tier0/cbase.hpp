@@ -17,6 +17,13 @@ enum GameMode
 	MODE_WARNING,
 };
 
+enum ItemType 
+{
+	ITEMTYPE_PERSCRIPTIONGLASSES,
+
+	ITEMTYPE_NULL_SIZE,
+};
+
 enum WorldBiome
 {
 // cold
@@ -76,5 +83,17 @@ static constexpr std::array<int, 9> frame_legend = {
         0x2502, ' ',    0x2502,
 	0x2514, 0x2500, 0x2518};
 
+#define ASSERT(x)					\
+	if(!(x))					\
+	{						\
+		etheria_log("assert failed: %s == 0\n",	\
+			#x);				\
+		exit(-1);				\
+	}
+#define WASSERT(x)				\
+	if(!(x))				\
+	{					\
+						\
+	}
 #endif
 

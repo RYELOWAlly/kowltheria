@@ -1,4 +1,4 @@
-#include "cbase.hpp"
+#include <cbase.hpp>
 #include "culture.hpp"
 #include "wizard.hpp"
 #include <libtcod.hpp>
@@ -44,6 +44,12 @@ HistoryEvent Culture::GetEvent(HistoryEventType type, int figure)
 	return HistoryEvent();
 }
 
+// FIXME: sloooooow!!!
+// TODO: fix incest; the game randomly picks another histfig (which
+// also should be changed; allow for picking random virtual people and
+// saving the persons info) to use as parent B, without any pre-flight
+// checks such as if they're related by siblings or by parents or
+// whatever
 void Culture::AscendHour()
 {
 	for(int i = 0; i < amount_of_histfigs; i++)
@@ -210,7 +216,6 @@ int Culture::GenRandomHistfig()
 
 int Culture::GenRandomHistfig(int parentA, int parentB)
 {
-	
 	HistoryFigure* newfigure = &histfigs[amount_of_histfigs++];
 	newfigure->name = "histfig";
 	//newfigure->uiname = TCODNamegen::generate("Celtic male");

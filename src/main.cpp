@@ -1,4 +1,4 @@
-#include "cbase.hpp"
+#include <cbase.hpp>
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4297)
@@ -15,6 +15,8 @@
 #include "planet.hpp"
 #include "menus.hpp"
 #include "save.hpp"
+#include "lisp.hpp"
+#include "scm.hpp"
 
 static tcod::Console gcConsole;
 static tcod::Context gcContext;
@@ -24,6 +26,11 @@ static Menu* mainMenu;
 static Menu* currentMenu;
 static Menu* helpMenu;
 static SaveFile save;
+
+SCM scm::main_get_planet()
+{
+	return scm_from_pointer(gameWorld, NULL);
+}
 
 bool mainLoop = true;
 bool ascendingTime = false;
@@ -307,7 +314,7 @@ int main(int argc, char** argv)
 	save = SaveFile();
 	
 	Culture::Init();
-	
+
 	mainMenu = new MainMenu(gamestart);
 	currentMenu = mainMenu;
 	gameWorld = new Planet();
@@ -317,6 +324,8 @@ int main(int argc, char** argv)
 	SDL_SetEventFilter(mouseevent_filter, NULL);
 	
 	gcContext = tcod::Context(params);
+
+	ELisp::Initialize();
 	
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(etherloop, 0, 0);

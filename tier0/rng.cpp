@@ -1,52 +1,13 @@
-
-
 #include "rng.hpp"
+#ifndef ETHERIADIT
 #include "cbase.hpp"
+#endif
 #include <cmath>
+#include "math.hpp"
 using namespace noise;
 
-#define TEMPERATE_THRESHOLD 0
-#define HOT_THRESHOLD       0
-#define WATER_THRESHOLD     -0.2
-#define MED_THRESHOLD       0
-#define MTNHEIGHT_THRS      0.2
-#define HIGH_THRESHOLD      0.5
-
-#define WORLD_WIDTH       (double)90
-#define WORLD_HEIGHT      (double)40
-
-#define ZOOM_X 100
-#define ZOOM_Y 100
-
-struct vector
-{
-	double x;
-	double y;
-};
-
-// mercator projection
-vector ProjectLLToXY(int lat, int lng)
-{
-	double dlat = (double)lat;
-	double dlong = (double)lng;
-
-	vector vec;
-	vec.x = (dlong + 180.0) *
-		(WORLD_WIDTH / 360.0);
-
-	double dlatrad = dlat *
-		M_PI / 180.0;
-
-	double mercN = std::log(
-		std::tan((M_PI/4.0)+
-			 (dlatrad/2.0))
-		);
-	
-	vec.y = (WORLD_HEIGHT/2.0) -
-		(WORLD_WIDTH * mercN / (2.0 * M_PI));
-
-	return vec;
-}
+#define HEAT_LATLONG
+#define HEIGHT_LATLONG
 
 vector TurnXYToCyclic(vector v)
 {
@@ -61,10 +22,9 @@ vector TurnXYToCyclic(vector v)
 // this must be a static global thing because heatModule will throw a
 // segmentation fault if i dont; the context for the module is
 // destroyed once RNG::RNG ends
-static module::RidgedMulti heatBase;
-
-#define HEATBASE_SEED_OFFSET   1
-#define HEATMODULE_SEED_OFFSET 2
+static module::Perlin heatBase;
+#define HEATBASE_SEED_OFFSET   0
+#define HEATMODULE_SEED_OFFSET 0
 
 RNG::RNG(int seed)
 {
@@ -74,13 +34,15 @@ RNG::RNG(int seed)
 	biomeModule = new module::Perlin();
 	
 	heatModule->SetSourceModule(0, heatBase);
+	heatModule->SetFrequency(0.2);
+	heatModule->SetPower(8.0);
 	heatBase.SetOctaveCount(6);
 	biomeModule->SetOctaveCount(1);
 	biomeModule->SetPersistence(0.5);
 }
 
 double BlendNoiseModule(module::Module* mod, double x, double y,
-			double w = 90.0)
+			double w = 180.0)
 {
 	x += w;
 	
@@ -101,13 +63,31 @@ double RNG::GetHeatAt(int lat,
 {
 	heatBase.SetSeed(seed + HEATBASE_SEED_OFFSET);
 	heatModule->SetSeed(seed + HEATMODULE_SEED_OFFSET);
-	
+
+#ifdef HEAT_LATLONG
 	vector vec = ProjectLLToXY(lat,lng);
-	//vec = TurnXYToCyclic(vec);
+#else
+	vector vec;
+	vec.x = lng;
+	vec.y = lat;
+#endif
+	// vec = TurnXYToCyclic(vec);
 	
-	double heat = BlendNoiseModule(heatModule,
+	double heat_pre = BlendNoiseModule(heatModule,
 				       vec.x/ZOOM_X, vec.y/ZOOM_Y);
 
+	// heat needs to be properly processed to fit with the world
+	// as it seems
+
+	double heat = 0.0;
+
+	double tloss =
+		std::max(((3.5 *
+			   (GetHeightAt(lat,lng)*500.0))/1000.0),
+			 MIN_HEIGHT_FOR_LOSS);	
+	heat += heat_pre;
+	heat -= tloss;
+	
 	return heat;
 }
 
@@ -116,8 +96,14 @@ double RNG::GetHeightAt(int lat,
 {
 	biomeModule->SetSeed(seed);
 	
+#ifdef HEIGHT_LATLONG
 	vector vec = ProjectLLToXY(lat,lng);
-	//vec = TurnXYToCyclic(vec);
+#else
+	vector vec;
+	vec.x = lng;
+	vec.y = lat;
+#endif
+	// vec = TurnXYToCyclic(vec);
 
 	double height = BlendNoiseModule(biomeModule,
 					 vec.x/ZOOM_X, vec.y/ZOOM_Y);

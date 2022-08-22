@@ -1,5 +1,6 @@
 #include "world.hpp"
 #include "actor.hpp"
+#include <libguile.h>
 
 static const int ROOM_MAX_SIZE = 12;
 static const int ROOM_MIN_SIZE = 6;
@@ -30,7 +31,8 @@ public:
 			h=rng->getInt(ROOM_MIN_SIZE, node->h-2);
 			x=rng->getInt(node->x+1, node->x+node->w-w-1);
 			y=rng->getInt(node->y+1, node->y+node->h-h-1);
-			etheria_log("creating room @ %i x %i, s: %i x %i\n",x,y,w,h);
+			etheria_log("creating room @ %i x %i, s: %ix%i\n",
+				    x,y,w,h);
 			
 			map.CreateRoom(roomNum == 0, x, y, x+w-1, y+h-1);
 			if ( roomNum != 0 ) {
@@ -123,15 +125,22 @@ void World::Generate()
 	BspListener listener(*this);
 	bsp.traverseInvertedLevelOrder(&listener,NULL);
 	etheria_log("game world generated: %ix%i\n",width,height);
+	SCM lfunc = scm_variable_ref(
+		scm_c_lookup("world_open"));
+	scm_call_1(lfunc, scm_from_pointer(this, NULL));
 }
 
 void World::Render(tcod::Console* cConsole) const
 {
 	Actor* playerActor = Actor::GetFromName("player");
 	
-	for(int x = 0; x < std::min(width, cConsole->get_width()); x++)
+	for(int x = 0;
+	    x < std::min(width, cConsole->get_width());
+	    x++)
 	{
-		for(int y = 0; y < std::min(height, cConsole->get_height()); y++)
+		for(int y = 0;
+		    y < std::min(height, cConsole->get_height());
+		    y++)
 		{
 			TCOD_ConsoleTile& tile = cConsole->at({x,y});
 			
@@ -149,14 +158,21 @@ void World::Render(tcod::Console* cConsole) const
 			else
 			{
 				if(playerActor)
-					if(playerActor->abilities & ABILITY_XRAY ENABLE_IF_WIZARD)
+					if(playerActor->abilities &
+					   ABILITY_XRAY ENABLE_IF_WIZARD)
 					{
 #ifdef WIZARD
 						tcolor =
-							tcod::ColorRGBA(127,127,255,255);
+							tcod::ColorRGBA(127,
+									127,
+									255,
+									255);
 #else
 						tcolor =
-							tcod::ColorRGBA(255,127,127,255);
+							tcod::ColorRGBA(255,
+									127,
+									127,
+									255);
 						// special X-ray color
 #endif
 						tcolor.a /= 2;

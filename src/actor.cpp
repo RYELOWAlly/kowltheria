@@ -1,9 +1,10 @@
-#include "cbase.hpp"
+#include <cbase.hpp>
 #include "actor.hpp"
 #include "templates.hpp"
 #include "culture.hpp"
 #include <vector>
 #include <algorithm>
+#include <itemtypes.hpp>
 
 static std::vector<Actor*> vActorList;
 

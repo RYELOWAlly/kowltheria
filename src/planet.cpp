@@ -1,6 +1,20 @@
-#include "cbase.hpp"
+#include <cbase.hpp>
 #include "templates.hpp"
 #include "planet.hpp"
+#include "scm.hpp"
+#include <libguile.h>
+
+SCM scm::planet_get_rng(SCM pointer)
+{
+	Planet* planet = (Planet*)scm_to_pointer(pointer);
+	return scm_from_pointer(planet->planetRNG,NULL);
+}
+
+SCM scm::planet_get_culture(SCM pointer)
+{
+	Planet* planet = (Planet*)scm_to_pointer(pointer);
+	return scm_from_pointer(planet->playerCulture,NULL);	
+}
 
 Planet::Planet()
 {
@@ -16,7 +30,8 @@ Planet::Planet()
 				0x263a,
 				nullptr,
 				tcod::ColorRGBA(255,255,255,255));
-	playerCulture->MkActorHistfig(playerActor);
+	// playerCulture->MkActorHistfig(playerActor);
+	
 }
 
 void Planet::Generate()
@@ -195,7 +210,6 @@ void PlanetMenu::RenderPlanet(int xOff, int yOff, tcod::Console& cConsole)
 				       latitude,
 				       longitude);
 			
-				
 			switch(biome)
 			{
 			case BIOME_DESERT:
@@ -335,7 +349,8 @@ void PlanetMenu::RenderPlanet(int xOff, int yOff, tcod::Console& cConsole)
 			currentPlanet->playerCulture->GetHistFig(i);
 		averageage += fig.soul.age;
 	}
-	averageage /= currentPlanet->playerCulture->amount_of_histfigs;
+	if(currentPlanet->playerCulture->amount_of_histfigs != 0)
+		averageage /= currentPlanet->playerCulture->amount_of_histfigs;
 
 	tcod::print(cConsole,
 		    {xOff,yOff+20},

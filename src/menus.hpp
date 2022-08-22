@@ -1,7 +1,7 @@
 #ifndef MENUS_HPP
 #define MENUS_HPP
 
-#include "cbase.hpp"
+#include <cbase.hpp>
 #include <libtcod.hpp>
 #include <SDL.h>
 

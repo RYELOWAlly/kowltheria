@@ -9,6 +9,9 @@ set(CMAKE_TOOLCHAIN_FILE
 project(etheria
   LANGUAGES C CXX)
 
+project(tier0
+  LANGUAGES C CXX)
+
 find_package(Protobuf REQUIRED)
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
@@ -24,31 +27,49 @@ add_executable(etheria
   src/planet.hpp
   src/menus.hpp
   src/help.hpp
-  src/rng.hpp
   src/wizard.hpp
   src/save.hpp
+  src/lisp.hpp
+  src/scm.hpp
   
   src/main.cpp
-  src/system.cpp
   
   src/world.cpp
   src/worldgen.cpp
 
-  src/itemtypes.cpp
   src/actor.cpp
   src/culture.cpp
+
   src/planet.cpp
   src/menus.cpp
   src/help.cpp
-  src/rng.cpp
   src/wizard.cpp
   src/save.cpp
+  src/lisp.cpp
+  src/scm.cpp
+)
 
-  ${PROTO_SRCS} ${PROTO_HDRS}
+add_library(tier0 SHARED
+  tier0/rng.hpp
+  tier0/itemtypes.hpp
+  tier0/math.hpp
+  
+  tier0/rng.cpp
+  tier0/system.cpp
+  tier0/itemtypes.cpp
+  tier0/math.cpp
+
+  ${PROTO_SRCS} ${PROTO_HDRS}  
+)
+
+set_target_properties(tier0 PROPERTIES OUTPUT_NAME "EtheriaTier0")
+
+target_precompile_headers(tier0 PRIVATE
+  tier0/cbase.hpp
 )
 
 target_precompile_headers(etheria PRIVATE
-  src/cbase.hpp
+  tier0/cbase.hpp
 )
 
 target_compile_features(etheria PRIVATE
@@ -77,11 +98,25 @@ add_subdirectory("libtcod")
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(LibNoise REQUIRED)
+find_package(Guile REQUIRED)
+
+target_include_directories(tier0 PUBLIC
+  ${LIBNOISE_INCLUDE_DIR}
+  ${Protobuf_INCLUDE_DIRS}
+)
+
+target_link_libraries(tier0 PUBLIC
+  libtcod::libtcod
+  ${LIBNOISE_LIBRARIES}
+  ${Protobuf_LIBRARIES}
+)
 
 target_include_directories(etheria PUBLIC
   ${LIBNOISE_INCLUDE_DIR}
   ${Protobuf_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_BINARY_DIR}  
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${GUILE_INCLUDE_DIRS}
+  tier0
 )
 
 target_compile_definitions(etheria PUBLIC
@@ -94,4 +129,61 @@ target_link_libraries(etheria PRIVATE
   libtcod::libtcod
   ${LIBNOISE_LIBRARIES}
   ${Protobuf_LIBRARIES}
+  ${GUILE_LIBRARIES}
+  tier0
+)
+
+project(etheriadit
+  LANGUAGES C CXX)
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+qt_standard_project_setup()
+
+add_executable(etheriadit
+  dit/main.cpp
+  
+  # main menu  
+  dit/overlook.hpp
+  dit/overlook.cpp
+  dit/overlook.ui
+
+  # world & rng edit
+  dit/world.hpp
+  dit/world.cpp
+  dit/world.ui
+
+  # meta info edit
+  dit/meta.hpp
+  dit/meta.cpp
+  dit/meta.ui
+
+  # world view
+  dit/worldview.hpp
+  dit/worldview.cpp
+  dit/worldview.ui
+)
+
+target_compile_definitions(etheriadit PUBLIC
+  ETHERIADIT
+)
+
+target_include_directories(etheriadit PUBLIC
+  ${Protobuf_INCLUDE_DIRS}
+  ${LIBNOISE_INCLUDE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}
+  tier0
+  src
+)
+
+target_link_libraries(etheriadit PRIVATE
+  ${Protobuf_LIBRARIES}
+  ${LIBNOISE_LIBRARIES}
+  tier0
+  Qt6::Widgets
+  tier0
+)
+
+set_target_properties(etheriadit PROPERTIES
+  WIN32_EXECUTABLE ON
+  MACOSX_BUNDLE ON
 )

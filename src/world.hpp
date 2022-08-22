@@ -1,8 +1,9 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
-#include "cbase.hpp"
+#include <cbase.hpp>
 #include <libtcod.hpp>
+#include <itemtypes.hpp>
 
 struct WorldTile
 {
@@ -11,9 +12,6 @@ struct WorldTile
 	
 	WorldTile() : explored(false), down(false) {}
 };
-
-const char* get_name_for_biome(WorldBiome t);
-const char* get_dungeonname_from_biome(WorldBiome t);
 
 class World
 {

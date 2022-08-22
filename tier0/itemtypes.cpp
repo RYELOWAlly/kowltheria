@@ -1,4 +1,4 @@
-#include "actor.hpp"
+#include "cbase.hpp"
 
 const char* item_type_names[] = {
 	"perscription glasses",
